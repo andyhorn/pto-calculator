@@ -1,65 +1,73 @@
 <template>
   <b-container>
-    <h1 class="text-center my-5">PTO Calculator</h1>
+    <h1 class="text-center mt-3">PTO Calculator</h1>
     <b-row class="mb-3">
       <b-col>
-        <b-form-group label="Period length (days)">
+        <b-form-group label="Period length (days)"
+          description="How many days are in one pay period?">
           <b-form-input v-model="numDaysInPeriod" type="number" min="0"/>
         </b-form-group>
       </b-col>
       <b-col>
-        <b-form-group label="Hours per period">
+        <b-form-group label="Hours per period"
+          description="How many hours do you accrue each pay period?">
           <b-form-input v-model="hoursPerPeriod" type="number" min="0"/>
         </b-form-group>
       </b-col>
     </b-row>
     <b-row class="mb-3">
       <b-col>
-        <b-form-group label="Current period start date">
+        <b-form-group label="Current period start date"
+          description="When did this most recent pay period begin?">
           <b-form-input v-model="currentPeriodStart" type="date"/>
         </b-form-group>
       </b-col>
       <b-col>
-        <b-form-group label="Current accrued PTO (hours)">
+        <b-form-group label="Current accrued PTO (hours)"
+          description="How many PTO hours do you currently have available?">
           <b-form-input v-model="currentHours" type="number" min="0"/>
         </b-form-group>
       </b-col>
     </b-row>
     <b-row class="mb-3">
       <b-col>
-        <b-form-group label="Additional PTO (hours)">
+        <b-form-group label="Additional PTO (hours)"
+          description="Do you have any additional PTO, such as flex time, holidays, etc?">
           <b-form-input v-model="additionalHours" type="number" min="0"/>
         </b-form-group>
       </b-col>
     </b-row>
     <b-row class="mb-3">
       <b-col>
-        <b-form-group label="Target date">
-          <b-form-input v-model="targetDate" type="date" :min="currentPeriodStart"/>
+        <b-form-group label="Target date"
+          description="What date should these calculation target?">
+          <b-form-input v-model="targetDate" type="date" :min="currentPeriodStart" :disabled="isTargetDateDisabled"/>
         </b-form-group>
       </b-col>
     </b-row>
     <b-row class="text-center">
-      <b-col class="mt-3 mb-5" cols="12">
-        <h3>Totals</h3>
+      <b-col class="mt-5 mb-3" cols="12">
+        <h3>Results</h3>
       </b-col>
       <b-col>
-        <p>Current: {{ currentHoursString }}</p>
+        <p>Current Hours:<br/>{{ currentHoursString }}</p>
       </b-col>
       <b-col>
-        <p>Accrued: {{ accruedHoursString }}</p>
+        <p>Accrued by Target Date:<br/>{{ accruedHoursString }}</p>
       </b-col>
       <b-col>
-        <p>Hours: {{ totalPtoHoursString }}</p>
+        <p>Total Hours:<br/>{{ totalPtoHoursString }}</p>
       </b-col>
       <b-col>
-        <p>Days: {{ totalPtoDaysString }}</p>
+        <p>Total Days:<br/>{{ totalPtoDaysString }}</p>
       </b-col>
     </b-row>
   </b-container>
 </template>
 
 <script>
+const PRECISION = 3;
+
 export default {
   name: 'App',
   data() {
@@ -98,11 +106,12 @@ export default {
     showTotalHours() {
       return !this.isTargetDateDisabled && this.targetDate != null;
     },
+    totalCurrentHours() {
+      return Number(this.currentHours) + Number(this.additionalHours);
+    },
     totalPtoHours() {
-      const currentHours = Number(this.currentHours) + Number(this.additionalHours);
-
       if (this.currentPeriodStart == null || this.targetDate == null) {
-        return currentHours;
+        return this.totalCurrentHours;
       }
 
       const numDaysIntoCurrentPeriod = this.isSameDate(this.today, new Date(this.currentPeriodStart))
@@ -111,25 +120,25 @@ export default {
       const endOfPeriod = this.today.setDate(this.today.getDate() + numDaysRemainingInCurrentPeriod);
 
       if (endOfPeriod > new Date(this.targetDate)) {
-        return currentHours;
+        return this.totalCurrentHours;
       }
 
       const numPeriodsUntilTargetDate = Math.floor(this.dateDiff(new Date(this.targetDate), endOfPeriod) / this.numDaysInPeriod) + 1;
       const hoursToBeAccrued = numPeriodsUntilTargetDate * this.hoursPerPeriod;
 
-      return Number(hoursToBeAccrued) + Number(currentHours);
+      return Number(hoursToBeAccrued) + this.totalCurrentHours;
     },
     currentHoursString() {
-      return Number(Number(this.currentHours) + Number(this.additionalHours)).toFixed(2);
+      return this.totalCurrentHours.toFixed(PRECISION);
     },
     accruedHoursString() {
-      return Number(this.totalPtoHours - Number(this.currentHours) - Number(this.additionalHours)).toFixed(2);
+      return Number(this.totalPtoHours - this.totalCurrentHours).toFixed(PRECISION);
     },
     totalPtoHoursString() {
-      return Number(this.totalPtoHours).toFixed(2);
+      return Number(this.totalPtoHours).toFixed(PRECISION);
     },
     totalPtoDaysString() {
-      return Number(this.hoursToDays(this.totalPtoHours)).toFixed(2);
+      return Number(this.hoursToDays(this.totalPtoHours)).toFixed(PRECISION);
     }
   }
 }
