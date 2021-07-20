@@ -1,5 +1,10 @@
 <template>
   <b-container>
+    <div class="form-check form-switch dark-mode-switch">
+      <input class="form-check-input" type="checkbox" id="dark-mode-switch" v-model="isDarkMode"/>
+      <label class="form-check-label" for="dark-mode-switch"
+        :class="{ 'fw-bold': isDarkMode }">Dark mode</label>
+    </div>
     <h1 class="text-center my-5">PTO Calculator</h1>
     <b-row class="mb-3">
       <b-col>
@@ -44,7 +49,7 @@
     </b-row>
     <b-row>
       <b-col>
-        <table class="table table-light text-center">
+        <table class="table text-center" :class="{ 'table-light': isDarkMode }">
           <thead>
             <tr>
               <th>Total Current Hours</th>
@@ -72,14 +77,29 @@ const PRECISION = 3;
 
 export default {
   name: 'App',
+  mounted() {
+    document.title = 'PTO Calculator';
+  },
   data() {
     return {
       additionalHours: 0,
       currentHours: 0,
       hoursPerPeriod: 0,
+      isDarkMode: false,
       lastPeriodEnd: null,
       numDaysInPeriod: 14,
       targetDate: null,
+    }
+  },
+  watch: {
+    'isDarkMode'() {
+      const body = document.querySelector('body');
+
+      if (this.isDarkMode) {
+        body.setAttribute('class', 'bg-dark text-light');
+      } else {
+        body.setAttribute('class', '');
+      }
     }
   },
   methods: {
@@ -147,4 +167,9 @@ export default {
 </script>
 
 <style>
+  .dark-mode-switch {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+  }
 </style>
